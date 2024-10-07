@@ -8,4 +8,6 @@ import java.util.List;
 public interface ExternalRecipeProvider {
 
     List<RecipeDto> getExternalRecipes(SearchRecipeQuery query);
+
+    RecipeDto getExternalRecipe(Long recipeId);
 }

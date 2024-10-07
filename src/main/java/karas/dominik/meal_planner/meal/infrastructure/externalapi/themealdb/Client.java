@@ -24,6 +24,7 @@ import java.util.Optional;
 class Client implements ExternalRecipeProvider {
 
     private static final String FETCH_MEALS_URL = "https://www.themealdb.com/api/json/v1/1/search.php?s=%s";
+    private static final String FETCH_MEAL_URL = "https://www.themealdb.com/api/json/v1/1/lookup.php?i=%s";
 
     private final HttpClient httpClient;
     private final ObjectMapper mapper;
@@ -33,6 +34,24 @@ class Client implements ExternalRecipeProvider {
         return fetchMealsAsync(query).meals().stream()
                     .map(Recipe::asDto)
                     .toList();
+    }
+
+    @Override
+    public RecipeDto getExternalRecipe(Long recipeId) {
+        return fetchMealById(recipeId)
+                .asDto();
+    }
+
+    private TheMealDbApiResponse.Recipe fetchMealById(Long recipeId) {
+        var request = HttpRequest.newBuilder()
+                .uri(URI.create(String.format(FETCH_MEAL_URL, recipeId)))
+                .build();
+
+        try {
+            return asApiRecipeResponse(httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body());
+        } catch (Exception e) {
+            throw new FetchingMealsFailedException("Failed to fetch meals", e);
+        }
     }
 
     private TheMealDbApiResponse fetchMealsAsync(SearchRecipeQuery query) {
@@ -61,6 +80,14 @@ class Client implements ExternalRecipeProvider {
             return mapper.readValue(body, TheMealDbApiResponse.class);
         } catch (JsonProcessingException e) {
             throw new FetchingMealsFailedException("Failed to map API response into TheMealDbApiResponse", e);
+        }
+    }
+
+    private TheMealDbApiResponse.Recipe asApiRecipeResponse(String body) {
+        try {
+            return mapper.readValue(body, TheMealDbApiResponse.Recipe.class);
+        } catch (JsonProcessingException e) {
+            throw new FetchingMealsFailedException("Failed to map API response into TheMealDbApiResponse.Recipe", e);
         }
     }
 }
