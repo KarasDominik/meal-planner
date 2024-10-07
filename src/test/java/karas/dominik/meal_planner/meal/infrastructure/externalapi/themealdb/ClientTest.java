@@ -47,7 +47,7 @@ class ClientTest {
     void shouldReturnRecipesReceivedFromApi() throws IOException {
         // given
         var jsonApiResponse = fetchJsonFrom("src/test/resources/data/json-api-responses/exemplary-valid-response.json");
-        var expectedRecipe = objectMapper.readValue(jsonApiResponse, TheMealDbApiResponse.class).meals().stream()
+        var expectedRecipes = objectMapper.readValue(jsonApiResponse, TheMealDbApiResponse.class).meals().stream()
                 .map(TheMealDbApiResponse.Recipe::asDto)
                 .toList();
 
@@ -64,7 +64,7 @@ class ClientTest {
 
         // then
         assertThat(recipes).size().isEqualTo(1);
-        assertThat(recipes).isEqualTo(expectedRecipe);
+        assertThat(recipes).isEqualTo(expectedRecipes);
     }
 
     @Test
