@@ -13,7 +13,7 @@ public class WeeklyPdfServiceImpl implements WeeklyPdfService {
     private final PdfGenerator generator;
 
     @Override
-    public void generate(GenerateWeeklyPdfQuery query) {
-        generator.generate(query);
+    public byte[] generate(GenerateWeeklyPdfQuery query) {
+        return generator.generate(query);
     }
 }

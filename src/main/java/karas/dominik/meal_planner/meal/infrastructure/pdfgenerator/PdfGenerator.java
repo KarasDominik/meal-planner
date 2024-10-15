@@ -4,5 +4,5 @@ import karas.dominik.meal_planner.meal.domain.GenerateWeeklyPdfQuery;
 
 public interface PdfGenerator {
 
-    void generate(GenerateWeeklyPdfQuery query);
+    byte[] generate(GenerateWeeklyPdfQuery query);
 }

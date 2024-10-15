@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import static karas.dominik.meal_planner.meal.application.RequestMapper.asQuery;
+import static org.springframework.http.MediaType.APPLICATION_PDF_VALUE;
 
 @RestController
 @RequiredArgsConstructor
@@ -16,9 +17,9 @@ class WeeklyPdfController {
 
     private final WeeklyPdfService service;
 
-    @PostMapping
-    void generate(@RequestBody GenerateWeeklyPdfRequest request) {
-        service.generate(asQuery(request));
+    @PostMapping(produces = APPLICATION_PDF_VALUE)
+    byte[] generate(@RequestBody GenerateWeeklyPdfRequest request) {
+        return service.generate(asQuery(request));
     }
 
 }
