@@ -5,6 +5,7 @@ import karas.dominik.meal_planner.meal.domain.SearchRecipeQuery;
 import karas.dominik.meal_planner.meal.domain.dto.RecipeDto;
 import karas.dominik.meal_planner.meal.infrastructure.externalapi.themealdb.exception.FetchingMealsFailedException;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -43,61 +44,139 @@ class ClientTest {
         client = new Client(httpClient, objectMapper);
     }
 
-    @Test
-    void shouldReturnRecipesReceivedFromApi() throws IOException {
-        // given
-        var jsonApiResponse = fetchJsonFrom("src/test/resources/data/json-api-responses/exemplary-valid-response.json");
-        var expectedRecipes = objectMapper.readValue(jsonApiResponse, TheMealDbApiResponse.class).meals().stream()
-                .map(TheMealDbApiResponse.Recipe::asDto)
-                .toList();
+    @Nested
+    class FetchMealsTests {
 
-        var httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
-        when(httpResponse.body()).thenReturn(jsonApiResponse);
+        @Test
+        void shouldReturnRecipesReceivedFromApi() throws IOException {
+            // given
+            var jsonApiResponse = fetchJsonFrom("src/test/resources/data/json-api-responses/exemplary-valid-response.json");
+            var expectedRecipes = objectMapper.readValue(jsonApiResponse, TheMealDbApiResponse.class).meals().stream()
+                    .map(TheMealDbApiResponse.Recipe::asDto)
+                    .toList();
 
-        var responseFuture = CompletableFuture.completedFuture(httpResponse);
-        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(responseFuture);
+            var httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
+            when(httpResponse.body()).thenReturn(jsonApiResponse);
 
-        SearchRecipeQuery query = new SearchRecipeQuery(Optional.empty());
+            var responseFuture = CompletableFuture.completedFuture(httpResponse);
+            when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(responseFuture);
 
-        // when
-        List<RecipeDto> recipes = client.getExternalRecipes(query);
+            var query = new SearchRecipeQuery(Optional.empty());
 
-        // then
-        assertThat(recipes).size().isEqualTo(1);
-        assertThat(recipes).isEqualTo(expectedRecipes);
+            // when
+            List<RecipeDto> recipes = client.getExternalRecipes(query);
+
+            // then
+            assertThat(recipes).size().isEqualTo(1);
+            assertThat(recipes).isEqualTo(expectedRecipes);
+        }
+
+        @Test
+        void shouldThrowCustomExceptionWhenApiRequestFails() {
+            // given
+            doThrow(IllegalArgumentException.class).when(httpClient).sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class));
+
+            var query = new SearchRecipeQuery(Optional.empty());
+
+            // when - then
+            assertThatThrownBy(() -> client.getExternalRecipes(query))
+                    .isInstanceOf(FetchingMealsFailedException.class);
+        }
+
+        @Test
+        void shouldThrowWhenInvalidResponseIsSent() {
+            // given
+            var jsonApiResponse = """
+                    {
+                        "value": "some invalid content"
+                    }
+                    """;
+
+            var httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
+            when(httpResponse.body()).thenReturn(jsonApiResponse);
+
+            var responseFuture = CompletableFuture.completedFuture(httpResponse);
+            when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(responseFuture);
+
+            var query = new SearchRecipeQuery(Optional.empty());
+
+            // when - then
+            assertThatThrownBy(() -> client.getExternalRecipes(query))
+                    .isInstanceOf(FetchingMealsFailedException.class);
+        }
     }
 
-    @Test
-    void shouldThrowCustomExceptionWhenApiRequestFails() {
-        // given
-        doThrow(IllegalArgumentException.class).when(httpClient).sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class));
+    @Nested
+    class FetchMealByIdTests {
 
-        SearchRecipeQuery query = new SearchRecipeQuery(Optional.empty());
+        @Test
+        void shouldReturnRecipeReceivedFromApi() throws IOException, InterruptedException {
+            // given
+            var jsonApiResponse = fetchJsonFrom("src/test/resources/data/json-api-responses/exemplary-valid-response.json");
+            var expectedRecipe = objectMapper.readValue(jsonApiResponse, TheMealDbApiResponse.class).meals().stream()
+                    .map(TheMealDbApiResponse.Recipe::asDto)
+                    .findFirst()
+                    .orElseThrow();
 
-        // when - then
-        assertThatThrownBy(() -> client.getExternalRecipes(query))
-                .isInstanceOf(FetchingMealsFailedException.class);
-    }
+            var httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
+            when(httpResponse.body()).thenReturn(jsonApiResponse);
 
-    @Test
-    void shouldThrowWhenInvalidResponseIsSent() {
-        // given
-        var jsonApiResponse = """
-                {
-                    "value": "some invalid content"
-                }
-                """;
+            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
 
-        var httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
-        when(httpResponse.body()).thenReturn(jsonApiResponse);
+            // when
+            var recipe = client.getExternalRecipe(1000L);
 
-        var responseFuture = CompletableFuture.completedFuture(httpResponse);
-        when(httpClient.sendAsync(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(responseFuture);
+            // then
+            assertThat(recipe).isEqualTo(expectedRecipe);
+        }
 
-        SearchRecipeQuery query = new SearchRecipeQuery(Optional.empty());
+        @Test
+        void shouldThrowCustomExceptionWhenApiRequestFails() throws IOException, InterruptedException {
+            // given
+            doThrow(IllegalArgumentException.class)
+                    .when(httpClient).send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class));
 
-        // when - then
-        assertThatThrownBy(() -> client.getExternalRecipes(query))
-                .isInstanceOf(FetchingMealsFailedException.class);
+            // when - then
+            assertThatThrownBy(() -> client.getExternalRecipe(100L))
+                    .isInstanceOf(FetchingMealsFailedException.class);
+        }
+
+        @Test
+        void shouldThrowWhenInvalidResponseIsSent() throws IOException, InterruptedException {
+            // given
+            var jsonApiResponse = """
+                    {
+                        "value": "some invalid content"
+                    }
+                    """;
+
+            var httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
+            when(httpResponse.body()).thenReturn(jsonApiResponse);
+
+            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+
+            // when - then
+            assertThatThrownBy(() -> client.getExternalRecipe(100L))
+                    .isInstanceOf(FetchingMealsFailedException.class);
+        }
+
+        @Test
+        void shouldThrowWhenRecipeNotFound() throws IOException, InterruptedException {
+            // given
+            var jsonApiResponse = """
+                    {
+                        "meals": null
+                    }
+                    """;
+
+            var httpResponse = (HttpResponse<String>) mock(HttpResponse.class);
+            when(httpResponse.body()).thenReturn(jsonApiResponse);
+
+            when(httpClient.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class))).thenReturn(httpResponse);
+
+            // when - then
+            assertThatThrownBy(() -> client.getExternalRecipe(100L))
+                    .isInstanceOf(FetchingMealsFailedException.class);
+        }
     }
 }

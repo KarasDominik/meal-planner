@@ -17,6 +17,13 @@ class PdfGeneratorImpl implements PdfGenerator {
     public void generate(GenerateWeeklyPdfQuery query) {
         log.info("Starting to fetch recipes' details for weekly pdf");
         var mondayRecipe = query.monday().map(externalRecipeProvider::getExternalRecipe);
-        System.out.println(mondayRecipe);
+        var tuesdayRecipe = query.tuesday().map(externalRecipeProvider::getExternalRecipe);
+        var wednesdayRecipe = query.wednesday().map(externalRecipeProvider::getExternalRecipe);
+        var thursdayRecipe = query.thursday().map(externalRecipeProvider::getExternalRecipe);
+        var fridayRecipe = query.friday().map(externalRecipeProvider::getExternalRecipe);
+        var saturdayRecipe = query.saturday().map(externalRecipeProvider::getExternalRecipe);
+        var sundayRecipe = query.sunday().map(externalRecipeProvider::getExternalRecipe);
+        log.info("Finished");
+
     }
 }

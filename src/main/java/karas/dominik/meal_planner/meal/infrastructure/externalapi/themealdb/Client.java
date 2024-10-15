@@ -48,7 +48,8 @@ class Client implements ExternalRecipeProvider {
                 .build();
 
         try {
-            return asApiRecipeResponse(httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body());
+            var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString()).body();
+            return asApiRecipeResponse(response);
         } catch (Exception e) {
             throw new FetchingMealsFailedException("Failed to fetch meals", e);
         }
@@ -85,7 +86,9 @@ class Client implements ExternalRecipeProvider {
 
     private TheMealDbApiResponse.Recipe asApiRecipeResponse(String body) {
         try {
-            return mapper.readValue(body, TheMealDbApiResponse.Recipe.class);
+            return mapper.readValue(body, TheMealDbApiResponse.class).meals().stream()
+                    .findFirst()
+                    .orElseThrow();
         } catch (JsonProcessingException e) {
             throw new FetchingMealsFailedException("Failed to map API response into TheMealDbApiResponse.Recipe", e);
         }
