@@ -1,6 +1,6 @@
 package karas.dominik.meal_planner.meal.application;
 
-import karas.dominik.meal_planner.meal.domain.GenerateWeeklyPdfQuery;
+import karas.dominik.meal_planner.meal.domain.CreateWeeklyEatingPlanQuery;
 import karas.dominik.meal_planner.meal.domain.SearchRecipeQuery;
 import lombok.NoArgsConstructor;
 
@@ -17,8 +17,8 @@ class RequestMapper {
                 .build();
     }
 
-    static GenerateWeeklyPdfQuery asQuery(GenerateWeeklyPdfRequest request) {
-        return GenerateWeeklyPdfQuery.builder()
+    static CreateWeeklyEatingPlanQuery asQuery(CreateWeeklyEatingPlanRequest request) {
+        return CreateWeeklyEatingPlanQuery.builder()
                 .monday(request.monday())
                 .tuesday(request.tuesday())
                 .wednesday(request.wednesday())

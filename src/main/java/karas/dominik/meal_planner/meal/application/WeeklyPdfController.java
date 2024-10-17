@@ -18,7 +18,7 @@ class WeeklyPdfController {
     private final WeeklyPdfService service;
 
     @PostMapping(produces = APPLICATION_PDF_VALUE)
-    byte[] generate(@RequestBody GenerateWeeklyPdfRequest request) {
+    byte[] generate(@RequestBody CreateWeeklyEatingPlanRequest request) {
         return service.generate(asQuery(request));
     }
 
