@@ -34,6 +34,10 @@ Exemplary request body is as follows:
 Each field is optional.
 
 ## Technologies Used
-
-Spring boot, iTextPDF, Apache PDFBox, JUnit, Mockito, RestAssured
+- Spring boot
+- iTextPDF
+- Apache PDFBox
+- JUnit
+- Mockito
+- RestAssured
 
